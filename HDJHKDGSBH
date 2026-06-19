@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Gestion Inventaire Entreprise</title>
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    font-family:'Segoe UI',sans-serif;
+    background:linear-gradient(135deg,#0f172a,#1e293b);
+    min-height:100vh;
+    padding:30px;
+}
+
+.container{
+    max-width:1200px;
+    margin:auto;
+    background:white;
+    padding:30px;
+    border-radius:20px;
+    box-shadow:0 15px 40px rgba(0,0,0,0.3);
+}
+
+h1{
+    text-align:center;
+    color:#0f172a;
+    margin-bottom:25px;
+    font-size:32px;
+}
+
+.formulaire{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+    gap:15px;
+    margin-bottom:25px;
+}
+
+input{
+    padding:12px;
+    border:2px solid #e2e8f0;
+    border-radius:10px;
+    font-size:15px;
+}
+
+input:focus{
+    outline:none;
+    border-color:#2563eb;
+}
+
+.btn-ajouter{
+    background:#2563eb;
+    color:white;
+    border:none;
+    border-radius:10px;
+    cursor:pointer;
+    font-weight:bold;
+    transition:.3s;
+}
+
+.btn-ajouter:hover{
+    background:#1d4ed8;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    overflow:hidden;
+}
+
+th{
+    background:#2563eb;
+    color:white;
+    padding:15px;
+}
+
+td{
+    padding:15px;
+    text-align:center;
+    border-bottom:1px solid #e5e7eb;
+}
+
+tr:hover{
+    background:#f8fafc;
+}
+
+.faible{
+    background:#fee2e2;
+}
+
+.badge{
+    padding:6px 12px;
+    border-radius:20px;
+    color:white;
+    font-size:13px;
+    font-weight:bold;
+}
+
+.badge-ok{
+    background:#16a34a;
+}
+
+.badge-alert{
+    background:#dc2626;
+}
+
+.delete{
+    background:#dc2626;
+    color:white;
+    border:none;
+    padding:8px 12px;
+    border-radius:8px;
+    cursor:pointer;
+}
+
+.delete:hover{
+    background:#b91c1c;
+}
+
+.total{
+    margin-top:25px;
+    background:#0f172a;
+    color:white;
+    padding:15px;
+    border-radius:12px;
+    text-align:right;
+    font-size:22px;
+    font-weight:bold;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>📦 Gestion Inventaire Entreprise</h1>
+
+<div class="formulaire">
+
+<input type="text" id="nom" placeholder="Nom du produit">
+
+<input type="number" id="quantite" placeholder="Quantité">
+
+<input type="number" id="minimum" placeholder="Quantité minimum">
+
+<input type="number" id="prix" placeholder="Prix (€)">
+
+<button class="btn-ajouter" onclick="ajouterProduit()">
+➕ Ajouter
+</button>
+
+</div>
+
+<table>
+
+<thead>
+<tr>
+<th>Produit</th>
+<th>Quantité</th>
+<th>Minimum</th>
+<th>Prix (€)</th>
+<th>Valeur Stock (€)</th>
+<th>Statut</th>
+<th>Action</th>
+</tr>
+</thead>
+
+<tbody id="tableProduits">
+</tbody>
+
+</table>
+
+<div class="total" id="totalGeneral">
+Total inventaire : 0 €
+</div>
+
+</div>
+
+<script>
+
+let produits =
+JSON.parse(localStorage.getItem("inventaire")) || [];
+
+afficherProduits();
+
+function sauvegarder(){
+
+    localStorage.setItem(
+        "inventaire",
+        JSON.stringify(produits)
+    );
+
+}
+
+function ajouterProduit(){
+
+    const nom =
+    document.getElementById("nom").value.trim();
+
+    const quantite =
+    Number(document.getElementById("quantite").value);
+
+    const minimum =
+    Number(document.getElementById("minimum").value);
+
+    const prix =
+    Number(document.getElementById("prix").value);
+
+    if(
+        nom === "" ||
+        quantite <= 0 ||
+        minimum < 0 ||
+        prix < 0
+    ){
+        alert("Veuillez remplir correctement les champs");
+        return;
+    }
+
+    produits.push({
+        nom,
+        quantite,
+        minimum,
+        prix
+    });
+
+    sauvegarder();
+    afficherProduits();
+
+    document.getElementById("nom").value = "";
+    document.getElementById("quantite").value = "";
+    document.getElementById("minimum").value = "";
+    document.getElementById("prix").value = "";
+
+}
+
+function afficherProduits(){
+
+    const table =
+    document.getElementById("tableProduits");
+
+    table.innerHTML = "";
+
+    let totalGeneral = 0;
+
+    produits.forEach((produit,index)=>{
+
+        const totalProduit =
+        produit.quantite * produit.prix;
+
+        totalGeneral += totalProduit;
+
+        const ligne =
+        document.createElement("tr");
+
+        let statut = "";
+
+        if(produit.quantite <= produit.minimum){
+
+            statut =
+            '<span class="badge badge-alert">⚠ STOCK FAIBLE</span>';
+
+            ligne.classList.add("faible");
+
+        }else{
+
+            statut =
+            '<span class="badge badge-ok">✔ EN STOCK</span>';
+
+        }
+
+        ligne.innerHTML = `
+        <td>${produit.nom}</td>
+        <td>${produit.quantite}</td>
+        <td>${produit.minimum}</td>
+        <td>${produit.prix.toFixed(2)} €</td>
+        <td>${totalProduit.toFixed(2)} €</td>
+        <td>${statut}</td>
+        <td>
+            <button
+            class="delete"
+            onclick="supprimerProduit(${index})">
+            Supprimer
+            </button>
+        </td>
+        `;
+
+        table.appendChild(ligne);
+
+    });
+
+    document.getElementById("totalGeneral").textContent =
+    "💰 Total inventaire : " +
+    totalGeneral.toFixed(2) +
+    " €";
+
+}
+
+function supprimerProduit(index){
+
+    if(confirm("Supprimer ce produit ?")){
+
+        produits.splice(index,1);
+
+        sauvegarder();
+
+        afficherProduits();
+
+    }
+
+}
+
+document.addEventListener("keydown",function(event){
+
+    if(event.key==="Enter"){
+
+        ajouterProduit();
+
+    }
+
+});
+
+</script>
+
+</body>
+</html>
